@@ -1,50 +1,48 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, reactive, computed } from 'vue';
 
-const imageUploadRef = ref(null);
-const selectedImage = ref(null);
-const previewUrl = ref(null);
-const styleComputed = computed(() => {
-  return {
-    background: previewUrl.value
-      ? `url(${previewUrl.value}) no-repeat`
-      : '#fff',
-    backgroundSize: 'contain',
-  };
-});
+// State
+const imageUploadRef = ref<HTMLInputElement | null>(null);
+const selectedImage = ref<File | null>(null);
+const previewUrl = ref<string | null>(null);
+const positionList = ref<Array<{ name: number; xPercent: string; yPercent: string }>>([]);
+const currentPosition = reactive({ x: '0', y: '0' });
+const pageRef = ref<HTMLElement | null>(null);
+const showTooltip = ref(false);
+const tooltipPosition = reactive({ x: 0, y: 0 });
 
-function uploadChange(evt) {
-  console.log(evt);
-  const file = event.target.files[0];
-  if (!file) {
-    return;
-  }
+// Computed
+const styleComputed = computed(() => ({
+  background: previewUrl.value ? `url(${previewUrl.value}) no-repeat` : '#fff',
+  backgroundSize: 'contain',
+}));
+
+const tooltipPositionStyle = computed(() => ({
+  transform: `translate(${tooltipPosition.x}px, ${tooltipPosition.y}px)`,
+}));
+
+// Methods
+function uploadChange(evt: Event): void {
+  const el = evt.target as HTMLInputElement | null;
+  const file = el?.files ? el.files[0] : null;
+  if (!file) return;
   selectedImage.value = file;
   const reader = new FileReader();
-  reader.addEventListener(
-    'load',
-    () => {
-      // convert image file to base64 string
-      previewUrl.value = reader.result;
-    },
-    false
-  );
-
-  if (file) {
-    reader.readAsDataURL(file);
-  }
+  reader.addEventListener('load', () => {
+    previewUrl.value = reader.result as string;
+  });
+  reader.readAsDataURL(file);
 }
 
-function debounce(func, wait) {
-  let timeout;
-  return function (...args) {
-    const context = this;
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>): void => {
     clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), wait);
+    timeout = setTimeout(() => func(...args), wait);
   };
 }
 
-function reset() {
+function reset(): void {
   selectedImage.value = null;
   previewUrl.value = null;
   if (imageUploadRef.value) {
@@ -54,19 +52,13 @@ function reset() {
   showTooltip.value = false;
 }
 
-const pageRef = ref(null);
-const positionList = ref([]);
-const currentPosition = reactive({ x: 0, y: 0 });
-
-function calculatePercentFromEvent(evt) {
+function calculatePercentFromEvent(evt: MouseEvent): { xPercent: string; yPercent: string } | undefined {
   if (!pageRef.value || !selectedImage.value) return;
-  let pageWidth = pageRef.value.clientWidth;
-  let pageHeight = pageRef.value.clientHeight;
-  // console.log(evt)
+  const pageWidth = pageRef.value.clientWidth;
+  const pageHeight = pageRef.value.clientHeight;
   const rect = pageRef.value.getBoundingClientRect();
-  const x = evt.clientX - rect.left; // Get mouse X coordinate relative to the image
-  const y = evt.clientY - rect.top; // Get mouse Y coordinate relative to the image
-
+  const x = evt.clientX - rect.left;
+  const y = evt.clientY - rect.top;
   const fixedDecimal = 2;
   const xPercent = ((x / pageWidth) * 100).toFixed(fixedDecimal);
   const yPercent = ((y / pageHeight) * 100).toFixed(fixedDecimal);
@@ -75,64 +67,44 @@ function calculatePercentFromEvent(evt) {
 
 const onMouseMoveDebounce = debounce(onMouseMove, 100);
 
-function onMouseMove(evt) {
+function onMouseMove(evt: MouseEvent): void {
   if (!pageRef.value || !selectedImage.value) return;
-  const { xPercent, yPercent } = calculatePercentFromEvent(evt);
+  const { xPercent, yPercent } = calculatePercentFromEvent(evt) || { xPercent: '0', yPercent: '0' };
   currentPosition.x = xPercent;
   currentPosition.y = yPercent;
-  console.log(xPercent + '%', yPercent + '%');
 }
 
-function onMouseOver(evt) {
+function onMouseOver(): void {
   if (!pageRef.value || !selectedImage.value) return;
   showTooltip.value = true;
 }
 
-function onMouseDown(evt) {
-  console.log(evt);
-  const { xPercent, yPercent } = calculatePercentFromEvent(evt);
-
-  // push to list
-  positionList.value = [
-    ...positionList.value,
-    {
-      name: positionList.value.length + 1,
-      xPercent,
-      yPercent,
-    },
-  ];
+function onMouseDown(evt: MouseEvent): void {
+  const { xPercent, yPercent } = calculatePercentFromEvent(evt) || { xPercent: '0', yPercent: '0' };
+  positionList.value.push({
+    name: positionList.value.length + 1,
+    xPercent,
+    yPercent,
+  });
 }
 
-function onMouseOut(evt) {
-  if (evt.toElement.className === 'tooltip') {
+function onMouseOut(evt: MouseEvent): void {
+  if ((evt.relatedTarget as HTMLElement)?.className === 'tooltip') {
     return;
   }
   showTooltip.value = false;
 }
 
-const showTooltip = ref(false);
-const tooltipPostion = reactive({ x: 0, y: 0 });
-const tooltipPositionStyle = computed(() => {
-  return {
-    transform: `translate(${tooltipPostion.x || 0}px, ${
-      tooltipPostion.y || 0
-    }px)`,
-  };
-});
-
-function calculateTooltipPosition(evt) {
-  let x,
-    y = 0;
-  if (!pageRef.value || !selectedImage.value) return { x, y };
-  x = evt.clientX;
-  y = evt.clientY + document.scrollingElement.scrollTop;
+function calculateTooltipPosition(evt: MouseEvent): { x: number; y: number } {
+  const x = evt.clientX;
+  const y = evt.clientY + (document.scrollingElement?.scrollTop || 0);
   return { x, y };
 }
 
-function windowsMouseMove(evt) {
+function windowsMouseMove(evt: MouseEvent): void {
   const { x, y } = calculateTooltipPosition(evt);
-  tooltipPostion.x = x;
-  tooltipPostion.y = y;
+  tooltipPosition.x = x;
+  tooltipPosition.y = y;
 }
 
 onMounted(() => {
@@ -146,9 +118,7 @@ onUnmounted(() => {
 
 <template>
   <div class="main">
-    <h1 class="title noprint">
-      Find point in A4 coordinate system as a percent(%)
-    </h1>
+    <h1 class="title noprint">Find point in A4 coordinate system as a percent(%)</h1>
     <div class="fileupload-wrapper noprint">
       <input
         type="file"
@@ -174,7 +144,7 @@ onUnmounted(() => {
       ({{ currentPosition.x }}%, {{ currentPosition.y }}%)
     </div>
     <ul class="noprint">
-      <li v-for="pos in positionList">{{ pos }}</li>
+      <li v-for="pos in positionList" :key="pos.name">{{ pos }}</li>
     </ul>
   </div>
 </template>
