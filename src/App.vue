@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, reactive, computed } from 'vue';
 
+type PositionList = {
+  no: string | number;
+  xPercent: string;
+  yPercent: string;
+}
+
 // State
 const imageUploadRef = ref<HTMLInputElement | null>(null);
 const selectedImage = ref<File | null>(null);
 const previewUrl = ref<string | null>(null);
-const positionList = ref<Array<{ name: number; xPercent: string; yPercent: string }>>([]);
+const positionList = ref<PositionList[]>([]);
 const currentPosition = reactive({ x: '0', y: '0' });
 const pageRef = ref<HTMLElement | null>(null);
 const showTooltip = ref(false);
@@ -52,6 +58,10 @@ function reset(): void {
   showTooltip.value = false;
 }
 
+function resetPositionList(): void {
+  positionList.value = []
+}
+
 function calculatePercentFromEvent(evt: MouseEvent): { xPercent: string; yPercent: string } | undefined {
   if (!pageRef.value || !selectedImage.value) return;
   const pageWidth = pageRef.value.clientWidth;
@@ -82,7 +92,7 @@ function onMouseOver(): void {
 function onMouseDown(evt: MouseEvent): void {
   const { xPercent, yPercent } = calculatePercentFromEvent(evt) || { xPercent: '0', yPercent: '0' };
   positionList.value.push({
-    name: positionList.value.length + 1,
+    no: positionList.value.length + 1,
     xPercent,
     yPercent,
   });
@@ -96,8 +106,9 @@ function onMouseOut(evt: MouseEvent): void {
 }
 
 function calculateTooltipPosition(evt: MouseEvent): { x: number; y: number } {
-  const x = evt.clientX;
-  const y = evt.clientY + (document.scrollingElement?.scrollTop || 0);
+  const offsetXY = 14
+  const x = evt.clientX + (document.scrollingElement?.scrollLeft || 0) + offsetXY;
+  const y = evt.clientY + (document.scrollingElement?.scrollTop || 0) + offsetXY;
   return { x, y };
 }
 
@@ -119,33 +130,29 @@ onUnmounted(() => {
 <template>
   <div class="main">
     <h1 class="title noprint">Find point in A4 coordinate system as a percent(%)</h1>
-    <div class="fileupload-wrapper noprint">
-      <input
-        type="file"
-        id="image_uploads"
-        ref="imageUploadRef"
-        name="image_uploads"
-        class="input-upload"
-        accept=".jpg, .jpeg, .png"
-        @change="uploadChange"
-      />
-      <button v-if="selectedImage" @click="reset">reset</button>
+    <div class="action-wrapper">
+      <div class="fileupload-wrapper noprint">
+        <input type="file" id="image_uploads" ref="imageUploadRef" name="image_uploads" class="input-upload"
+          accept=".jpg, .jpeg, .png" @change="uploadChange" />
+      </div>
+      <button class="reset-btn" v-if="selectedImage" @click="reset">reset</button>
+      <div v-if="positionList.length > 0" class="reset-label-btn">
+        <button @click="resetPositionList">reset label</button>
+      </div>
     </div>
-    <div
-      class="page a4"
-      ref="pageRef"
-      @mousemove="onMouseMoveDebounce"
-      @mousedown="onMouseDown"
-      @mouseout="onMouseOut"
-      @mouseover="onMouseOver"
-      :style="styleComputed"
-    ></div>
+    <div class="page a4" ref="pageRef" @mousemove="onMouseMoveDebounce" @mousedown="onMouseDown" @mouseout="onMouseOut"
+      @mouseover="onMouseOver" :style="styleComputed">
+      <div v-for="pos in positionList" :key="pos.no" class="point"
+        :style="{ left: `${pos.xPercent}%`, top: `${pos.yPercent}%` }">
+        {{ pos.no }}
+      </div>
+    </div>
     <div v-show="showTooltip" class="tooltip" :style="tooltipPositionStyle">
       ({{ currentPosition.x }}%, {{ currentPosition.y }}%)
     </div>
-    <ul class="noprint">
-      <li v-for="pos in positionList" :key="pos.name">{{ pos }}</li>
-    </ul>
+    <textarea name="json-list" id="json-list" cols="30" rows="10" class="noprint" style="width: 100%;">
+      {{ positionList }}
+    </textarea>
   </div>
 </template>
 
@@ -153,6 +160,7 @@ onUnmounted(() => {
 .title {
   text-align: center;
 }
+
 .fileupload-wrapper {
   display: flex;
   justify-content: center;
@@ -171,5 +179,28 @@ onUnmounted(() => {
   left: 0;
   top: 0;
   transition: all 0.2s;
+}
+
+.action-wrapper {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 1.25rem;
+  align-items: center;
+}
+
+.reset-label-btn {
+  display: flex;
+}
+
+.point {
+  width: 20px;
+  height: 1rem;
+  font-size: 0.75rem;
+  text-align: center;
+  background: red;
+  position: absolute;
+  color: #fff;
+  border-radius: 0.2rem;
 }
 </style>

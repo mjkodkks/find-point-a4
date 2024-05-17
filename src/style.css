@@ -35,6 +35,8 @@ body {
   margin-bottom: 0.5cm;
   box-shadow: 0 0 0.1cm rgba(0, 0, 0, 0.5);
   border: 1px solid #000;
+  position: relative;
+  cursor: pointer;
 }
 
 @page {
