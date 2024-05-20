@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, reactive, computed } from 'vue';
+import { onMounted, onUnmounted, ref, reactive, computed } from "vue";
 
 type PositionList = {
   no: string | number;
+  name: string;
   xPercent: string;
   yPercent: string;
-}
+};
 
 // State
 const imageUploadRef = ref<HTMLInputElement | null>(null);
 const selectedImage = ref<File | null>(null);
 const previewUrl = ref<string | null>(null);
 const positionList = ref<PositionList[]>([]);
-const currentPosition = reactive({ x: '0', y: '0' });
+const currentPosition = reactive({ x: "0", y: "0" });
 const pageRef = ref<HTMLElement | null>(null);
 const showTooltip = ref(false);
 const tooltipPosition = reactive({ x: 0, y: 0 });
+const rangeMin = 0;
+const rangeMax = 100;
+const rangeStep = 0.5;
 
 // Computed
 const styleComputed = computed(() => ({
-  background: previewUrl.value ? `url(${previewUrl.value}) no-repeat` : '#fff',
-  backgroundSize: 'contain',
+  background: previewUrl.value ? `url(${previewUrl.value}) no-repeat` : "#fff",
+  backgroundSize: "contain",
 }));
 
 const tooltipPositionStyle = computed(() => ({
@@ -34,13 +38,16 @@ function uploadChange(evt: Event): void {
   if (!file) return;
   selectedImage.value = file;
   const reader = new FileReader();
-  reader.addEventListener('load', () => {
+  reader.addEventListener("load", () => {
     previewUrl.value = reader.result as string;
   });
   reader.readAsDataURL(file);
 }
 
-function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>): void => {
     clearTimeout(timeout);
@@ -52,17 +59,25 @@ function reset(): void {
   selectedImage.value = null;
   previewUrl.value = null;
   if (imageUploadRef.value) {
-    imageUploadRef.value.value = '';
+    imageUploadRef.value.value = "";
   }
   positionList.value = [];
   showTooltip.value = false;
 }
 
 function resetPositionList(): void {
-  positionList.value = []
+  positionList.value = [];
 }
 
-function calculatePercentFromEvent(evt: MouseEvent): { xPercent: string; yPercent: string } | undefined {
+function removePosition(posIndex: number): void {
+  positionList.value = positionList.value.filter(
+    (_, index) => index !== posIndex
+  );
+}
+
+function calculatePercentFromEvent(
+  evt: MouseEvent
+): { xPercent: string; yPercent: string } | undefined {
   if (!pageRef.value || !selectedImage.value) return;
   const pageWidth = pageRef.value.clientWidth;
   const pageHeight = pageRef.value.clientHeight;
@@ -79,7 +94,10 @@ const onMouseMoveDebounce = debounce(onMouseMove, 100);
 
 function onMouseMove(evt: MouseEvent): void {
   if (!pageRef.value || !selectedImage.value) return;
-  const { xPercent, yPercent } = calculatePercentFromEvent(evt) || { xPercent: '0', yPercent: '0' };
+  const { xPercent, yPercent } = calculatePercentFromEvent(evt) || {
+    xPercent: "0",
+    yPercent: "0",
+  };
   currentPosition.x = xPercent;
   currentPosition.y = yPercent;
 }
@@ -90,25 +108,35 @@ function onMouseOver(): void {
 }
 
 function onMouseDown(evt: MouseEvent): void {
-  const { xPercent, yPercent } = calculatePercentFromEvent(evt) || { xPercent: '0', yPercent: '0' };
+  if (!pageRef.value || !selectedImage.value) return;
+
+  let posName = prompt("Please enter the position name, or leave blank");
+  const { xPercent, yPercent } = calculatePercentFromEvent(evt) || {
+    xPercent: "0",
+    yPercent: "0",
+  };
   positionList.value.push({
     no: positionList.value.length + 1,
+    name: posName || "",
     xPercent,
     yPercent,
   });
 }
 
 function onMouseOut(evt: MouseEvent): void {
-  if ((evt.relatedTarget as HTMLElement)?.className === 'tooltip') {
+  if ((evt.relatedTarget as HTMLElement)?.className === "tooltip") {
     return;
   }
   showTooltip.value = false;
 }
 
 function calculateTooltipPosition(evt: MouseEvent): { x: number; y: number } {
-  const offsetXY = 14
-  const x = evt.clientX + (document.scrollingElement?.scrollLeft || 0) + offsetXY;
-  const y = evt.clientY + (document.scrollingElement?.scrollTop || 0) + offsetXY;
+  if (!pageRef.value || !selectedImage.value) return { x: 0, y: 0 };
+  const offsetXY = 14;
+  const x =
+    evt.clientX + (document.scrollingElement?.scrollLeft || 0) + offsetXY;
+  const y =
+    evt.clientY + (document.scrollingElement?.scrollTop || 0) + offsetXY;
   return { x, y };
 }
 
@@ -119,46 +147,150 @@ function windowsMouseMove(evt: MouseEvent): void {
 }
 
 onMounted(() => {
-  document.addEventListener('mousemove', windowsMouseMove);
+  document.addEventListener("mousemove", windowsMouseMove);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', windowsMouseMove);
+  document.removeEventListener("mousemove", windowsMouseMove);
 });
 </script>
 
 <template>
-  <div class="main">
-    <h1 class="title noprint">Find point in A4 coordinate system as a percent(%)</h1>
-    <div class="action-wrapper">
+  <div class="app">
+    <h1 class="title noprint">
+      Find point in A4 coordinate system as a percent(%)
+    </h1>
+    <div class="action-wrapper noprint">
       <div class="fileupload-wrapper noprint">
-        <input type="file" id="image_uploads" ref="imageUploadRef" name="image_uploads" class="input-upload"
-          accept=".jpg, .jpeg, .png" @change="uploadChange" />
+        <input
+          type="file"
+          id="image_uploads"
+          ref="imageUploadRef"
+          name="image_uploads"
+          class="input-upload"
+          accept=".jpg, .jpeg, .png"
+          @change="uploadChange"
+        />
       </div>
-      <button class="reset-btn" v-if="selectedImage" @click="reset">reset</button>
+      <button class="reset-btn" v-if="selectedImage" @click="reset">
+        reset
+      </button>
       <div v-if="positionList.length > 0" class="reset-label-btn">
         <button @click="resetPositionList">reset label</button>
       </div>
     </div>
-    <div class="page a4" ref="pageRef" @mousemove="onMouseMoveDebounce" @mousedown="onMouseDown" @mouseout="onMouseOut"
-      @mouseover="onMouseOver" :style="styleComputed">
-      <div v-for="pos in positionList" :key="pos.no" class="point"
-        :style="{ left: `${pos.xPercent}%`, top: `${pos.yPercent}%` }">
-        {{ pos.no }}
+    <div class="main">
+      <div
+        class="page a4"
+        ref="pageRef"
+        @mousemove="onMouseMoveDebounce"
+        @mousedown="onMouseDown"
+        @mouseout="onMouseOut"
+        @mouseover="onMouseOver"
+        :style="styleComputed"
+      >
+        <div
+          v-for="pos in positionList"
+          :key="pos.no"
+          class="point"
+          :style="{ left: `${pos.xPercent}%`, top: `${pos.yPercent}%` }"
+        >
+          {{ pos.no }} {{ pos?.name }}
+        </div>
+      </div>
+      <div v-show="showTooltip" class="tooltip" :style="tooltipPositionStyle">
+        ({{ currentPosition.x }}%, {{ currentPosition.y }}%)
+      </div>
+      <div class="card-wrapper noprint">
+        <div class="label noprint">POSITION LIST</div>
+        <div class="card-header">
+          <div>No</div>
+          <div>Name</div>
+          <div>X%</div>
+          <div>Y%</div>
+          <div></div>
+        </div>
+        <div class="card-list">
+          <div
+            class="card"
+            v-for="(card, cardIndex) in positionList"
+            :key="card.no"
+          >
+            <div class="card-no">{{ card.no }}</div>
+            <div class="card-name">
+              <input type="text" v-model="card.name" />
+            </div>
+            <div class="card-input">
+              <input
+                type="number"
+                v-model="card.xPercent"
+                :min="rangeMin"
+                :max="rangeMax"
+                :step="rangeStep"
+              />
+              <input
+                type="range"
+                v-model="card.xPercent"
+                :min="rangeMin"
+                :max="rangeMax"
+                :step="rangeStep"
+              />
+            </div>
+            <div class="card-input">
+              <input
+                type="number"
+                v-model="card.yPercent"
+                :min="rangeMin"
+                :max="rangeMax"
+                :step="rangeStep"
+              />
+              <input
+                type="range"
+                v-model="card.yPercent"
+                :min="rangeMin"
+                :max="rangeMax"
+                :step="rangeStep"
+              />
+            </div>
+            <button class="card-remove" @click="removePosition(cardIndex)">
+              X
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    <div v-show="showTooltip" class="tooltip" :style="tooltipPositionStyle">
-      ({{ currentPosition.x }}%, {{ currentPosition.y }}%)
-    </div>
-    <textarea name="json-list" id="json-list" cols="30" rows="10" class="noprint" style="width: 100%;">
-      {{ positionList }}
-    </textarea>
+    <div class="label noprint">JSON</div>
+    <textarea
+      name="json-list"
+      id="json-list"
+      cols="30"
+      rows="10"
+      class="noprint"
+      style="width: 100%"
+      >{{ positionList }}</textarea
+    >
   </div>
 </template>
 
 <style scoped>
+.main {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  grid-template-rows: 1fr;
+}
+
 .title {
   text-align: center;
+}
+
+.label {
+  width: fit-content;
+  background-color: black;
+  color: white;
+  padding: 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .fileupload-wrapper {
@@ -194,13 +326,95 @@ onUnmounted(() => {
 }
 
 .point {
-  width: 20px;
-  height: 1rem;
+  min-width: 20px;
+  padding: 2px;
+  height: 20px;
   font-size: 0.75rem;
   text-align: center;
   background: red;
   position: absolute;
   color: #fff;
   border-radius: 0.2rem;
+}
+
+.card-wrapper {
+  --w-col1: 60px;
+  --w-col2: 1fr;
+  --w-col3: 120px;
+  --w-col4: 120px;
+  --w-col5: 60px;
+  --w-max-width: 100%;
+  --row-gap: 0.5rem;
+  color: #fff;
+  padding-right: 0.5rem;
+  & .card-header {
+    display: grid;
+    grid-template-columns:
+      var(--w-col1) var(--w-col2) var(--w-col3) var(--w-col4)
+      var(--w-col5);
+    grid-template-rows: 1fr;
+    justify-content: center;
+    text-align: center;
+    background: black;
+    color: white;
+    font-size: 1rem;
+    height: 40px;
+    max-width: var(--w-max-width);
+    gap: var(--row-gap);
+    & div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+
+  & .card-list {
+    --height: 46px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    overflow: auto;
+    resize: vertical;
+    padding: 0.5rem 0;
+    max-width: var(--w-max-width);
+    background: rgb(44, 44, 44);
+    height: 60dvh;
+    width: var(--w-max-width);
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+    & .card {
+      min-height: var(--height);
+      display: grid;
+      grid-template-columns:
+        var(--w-col1) var(--w-col2) var(--w-col3) var(--w-col4)
+        var(--w-col5);
+      grid-template-rows: 1fr;
+      gap: var(--row-gap);
+      justify-content: center;
+      align-items: flex-start;
+    }
+    & .card-no {
+      text-align: center;
+    }
+    & .card-name {
+      & input {
+        width: 100%;
+      }
+    }
+    & .card-input {
+      display: flex;
+      flex-direction: column;
+    }
+    & .card-remove {
+      width: 40px;
+      cursor: pointer;
+    }
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 2fr;
+  }
 }
 </style>
