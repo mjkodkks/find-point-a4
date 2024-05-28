@@ -1,158 +1,196 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, reactive, computed } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import CustomDialog from './components/CustomDialog.vue'
 
-type PositionList = {
-  no: string | number;
-  name: string;
-  xPercent: string;
-  yPercent: string;
-};
+interface PositionList {
+  no: string | number
+  name: string
+  xPercent: string
+  yPercent: string
+}
 
 // State
-const imageUploadRef = ref<HTMLInputElement | null>(null);
-const selectedImage = ref<File | null>(null);
-const previewUrl = ref<string | null>(null);
-const positionList = ref<PositionList[]>([]);
-const currentPosition = reactive({ x: "0", y: "0" });
-const pageRef = ref<HTMLElement | null>(null);
-const showTooltip = ref(false);
-const tooltipPosition = reactive({ x: 0, y: 0 });
-const rangeMin = 0;
-const rangeMax = 100;
-const rangeStep = 0.5;
+const imageUploadRef = ref<HTMLInputElement | null>(null)
+const selectedImage = ref<File | null>(null)
+const previewUrl = ref<string | null>(null)
+const positionList = ref<PositionList[]>([])
+const newPostionListString = ref<string>()
+const positionListString = computed(() => JSON.stringify(positionList.value, null, 2))
+const currentPosition = reactive({ x: '0', y: '0' })
+const pageRef = ref<HTMLElement | null>(null)
+const showTooltip = ref(false)
+const tooltipPosition = reactive({ x: 0, y: 0 })
+const rangeMin = 0
+const rangeMax = 100
+const rangeStep = 0.5
 
 // Computed
 const styleComputed = computed(() => ({
-  background: previewUrl.value ? `url(${previewUrl.value}) no-repeat` : "#fff",
-  backgroundSize: "contain",
-}));
+  background: previewUrl.value ? `url(${previewUrl.value}) no-repeat` : '#fff',
+  backgroundSize: 'contain',
+}))
 
 const tooltipPositionStyle = computed(() => ({
   transform: `translate(${tooltipPosition.x}px, ${tooltipPosition.y}px)`,
-}));
+}))
 
 // Methods
 function uploadChange(evt: Event): void {
-  const el = evt.target as HTMLInputElement | null;
-  const file = el?.files ? el.files[0] : null;
-  if (!file) return;
-  selectedImage.value = file;
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    previewUrl.value = reader.result as string;
-  });
-  reader.readAsDataURL(file);
+  const el = evt.target as HTMLInputElement | null
+  const file = el?.files ? el.files[0] : null
+  if (!file)
+    return
+  selectedImage.value = file
+  const reader = new FileReader()
+  reader.addEventListener('load', () => {
+    previewUrl.value = reader.result as string
+  })
+  reader.readAsDataURL(file)
 }
 
 function debounce<T extends (...args: any[]) => void>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout>;
+  let timeout: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>): void => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
+    clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
 }
 
-function reset(): void {
-  selectedImage.value = null;
-  previewUrl.value = null;
-  if (imageUploadRef.value) {
-    imageUploadRef.value.value = "";
+const dialog = ref<InstanceType<typeof CustomDialog>>()
+
+function showDialog(): void {
+  if (dialog.value) {
+    dialog.value.showDialog()
   }
-  positionList.value = [];
-  showTooltip.value = false;
+}
+
+function confirmNewPostionList(): void {
+  if (!newPostionListString.value) { /* empty */ }
+  const newPostionListJson: PositionList[] = JSON.parse(newPostionListString.value || '')
+  if (Array.isArray(newPostionListJson)) {
+    const template: PositionList[] = []
+    newPostionListJson.forEach((pos) => {
+      template.push({
+        no: pos?.no || '',
+        name: pos?.name || '',
+        xPercent: pos?.xPercent || '',
+        yPercent: pos?.yPercent || '',
+      })
+    })
+    positionList.value = template
+  }
+  newPostionListString.value = ''
+  if (dialog.value) {
+    dialog.value.close()
+  }
+}
+function reset(): void {
+  selectedImage.value = null
+  previewUrl.value = null
+  if (imageUploadRef.value) {
+    imageUploadRef.value.value = ''
+  }
+  positionList.value = []
+  showTooltip.value = false
+  newPostionListString.value = ''
 }
 
 function resetPositionList(): void {
-  positionList.value = [];
+  positionList.value = []
 }
 
 function removePosition(posIndex: number): void {
   positionList.value = positionList.value.filter(
-    (_, index) => index !== posIndex
-  );
+    (_, index) => index !== posIndex,
+  )
 }
 
 function calculatePercentFromEvent(
-  evt: MouseEvent
-): { xPercent: string; yPercent: string } | undefined {
-  if (!pageRef.value || !selectedImage.value) return;
-  const pageWidth = pageRef.value.clientWidth;
-  const pageHeight = pageRef.value.clientHeight;
-  const rect = pageRef.value.getBoundingClientRect();
-  const x = evt.clientX - rect.left;
-  const y = evt.clientY - rect.top;
-  const fixedDecimal = 2;
-  const xPercent = ((x / pageWidth) * 100).toFixed(fixedDecimal);
-  const yPercent = ((y / pageHeight) * 100).toFixed(fixedDecimal);
-  return { xPercent, yPercent };
+  evt: MouseEvent,
+): { xPercent: string, yPercent: string } | undefined {
+  if (!pageRef.value || !selectedImage.value)
+    return
+  const pageWidth = pageRef.value.clientWidth
+  const pageHeight = pageRef.value.clientHeight
+  const rect = pageRef.value.getBoundingClientRect()
+  const x = evt.clientX - rect.left
+  const y = evt.clientY - rect.top
+  const fixedDecimal = 2
+  const xPercent = ((x / pageWidth) * 100).toFixed(fixedDecimal)
+  const yPercent = ((y / pageHeight) * 100).toFixed(fixedDecimal)
+  return { xPercent, yPercent }
 }
 
-const onMouseMoveDebounce = debounce(onMouseMove, 100);
+const onMouseMoveDebounce = debounce(onMouseMove, 100)
 
 function onMouseMove(evt: MouseEvent): void {
-  if (!pageRef.value || !selectedImage.value) return;
+  if (!pageRef.value || !selectedImage.value)
+    return
   const { xPercent, yPercent } = calculatePercentFromEvent(evt) || {
-    xPercent: "0",
-    yPercent: "0",
-  };
-  currentPosition.x = xPercent;
-  currentPosition.y = yPercent;
+    xPercent: '0',
+    yPercent: '0',
+  }
+  currentPosition.x = xPercent
+  currentPosition.y = yPercent
 }
 
 function onMouseOver(): void {
-  if (!pageRef.value || !selectedImage.value) return;
-  showTooltip.value = true;
+  if (!pageRef.value || !selectedImage.value)
+    return
+  showTooltip.value = true
 }
 
 function onMouseDown(evt: MouseEvent): void {
-  if (!pageRef.value || !selectedImage.value) return;
+  if (!pageRef.value || !selectedImage.value)
+    return
 
-  let posName = prompt("Please enter the position name, or leave blank");
+  const posName = prompt('Please enter the position name, or leave blank')
   const { xPercent, yPercent } = calculatePercentFromEvent(evt) || {
-    xPercent: "0",
-    yPercent: "0",
-  };
+    xPercent: '0',
+    yPercent: '0',
+  }
   positionList.value.push({
     no: positionList.value.length + 1,
-    name: posName || "",
+    name: posName || '',
     xPercent,
     yPercent,
-  });
+  })
 }
 
 function onMouseOut(evt: MouseEvent): void {
-  if ((evt.relatedTarget as HTMLElement)?.className === "tooltip") {
-    return;
+  if ((evt.relatedTarget as HTMLElement)?.className === 'tooltip') {
+    return
   }
-  showTooltip.value = false;
+  showTooltip.value = false
 }
 
-function calculateTooltipPosition(evt: MouseEvent): { x: number; y: number } {
-  if (!pageRef.value || !selectedImage.value) return { x: 0, y: 0 };
-  const offsetXY = 14;
-  const x =
-    evt.clientX + (document.scrollingElement?.scrollLeft || 0) + offsetXY;
-  const y =
-    evt.clientY + (document.scrollingElement?.scrollTop || 0) + offsetXY;
-  return { x, y };
+function calculateTooltipPosition(evt: MouseEvent): { x: number, y: number } {
+  if (!pageRef.value || !selectedImage.value)
+    return { x: 0, y: 0 }
+  const offsetXY = 14
+  const x
+    = evt.clientX + (document.scrollingElement?.scrollLeft || 0) + offsetXY
+  const y
+    = evt.clientY + (document.scrollingElement?.scrollTop || 0) + offsetXY
+  return { x, y }
 }
 
 function windowsMouseMove(evt: MouseEvent): void {
-  const { x, y } = calculateTooltipPosition(evt);
-  tooltipPosition.x = x;
-  tooltipPosition.y = y;
+  const { x, y } = calculateTooltipPosition(evt)
+  tooltipPosition.x = x
+  tooltipPosition.y = y
 }
 
 onMounted(() => {
-  document.addEventListener("mousemove", windowsMouseMove);
-});
+  document.addEventListener('mousemove', windowsMouseMove)
+})
 
 onUnmounted(() => {
-  document.removeEventListener("mousemove", windowsMouseMove);
-});
+  document.removeEventListener('mousemove', windowsMouseMove)
+})
 </script>
 
 <template>
@@ -163,31 +201,38 @@ onUnmounted(() => {
     <div class="action-wrapper noprint">
       <div class="fileupload-wrapper noprint">
         <input
-          type="file"
           id="image_uploads"
           ref="imageUploadRef"
+          type="file"
           name="image_uploads"
           class="input-upload"
           accept=".jpg, .jpeg, .png"
           @change="uploadChange"
-        />
+        >
       </div>
-      <button class="reset-btn" v-if="selectedImage" @click="reset">
+      <button v-if="selectedImage" class="reset-btn" @click="reset">
         reset
       </button>
       <div v-if="positionList.length > 0" class="reset-label-btn">
-        <button @click="resetPositionList">reset label</button>
+        <button @click="resetPositionList">
+          reset label
+        </button>
+      </div>
+      <div v-if="selectedImage">
+        <button @click="showDialog">
+          Import Positions
+        </button>
       </div>
     </div>
     <div class="main">
       <div
-        class="page a4"
         ref="pageRef"
+        class="page a4"
+        :style="styleComputed"
         @mousemove="onMouseMoveDebounce"
         @mousedown="onMouseDown"
         @mouseout="onMouseOut"
         @mouseover="onMouseOver"
-        :style="styleComputed"
       >
         <div
           v-for="pos in positionList"
@@ -202,55 +247,59 @@ onUnmounted(() => {
         ({{ currentPosition.x }}%, {{ currentPosition.y }}%)
       </div>
       <div class="card-wrapper noprint">
-        <div class="label noprint">POSITION LIST</div>
+        <div class="label noprint">
+          POSITION LIST
+        </div>
         <div class="card-header">
           <div>No</div>
           <div>Name</div>
           <div>X%</div>
           <div>Y%</div>
-          <div></div>
+          <div />
         </div>
         <div class="card-list">
           <div
-            class="card"
             v-for="(card, cardIndex) in positionList"
             :key="card.no"
+            class="card"
           >
-            <div class="card-no">{{ card.no }}</div>
+            <div class="card-no">
+              {{ card.no }}
+            </div>
             <div class="card-name">
-              <input type="text" v-model="card.name" />
+              <input v-model="card.name" type="text">
             </div>
             <div class="card-input">
               <input
+                v-model="card.xPercent"
                 type="number"
-                v-model="card.xPercent"
                 :min="rangeMin"
                 :max="rangeMax"
                 :step="rangeStep"
-              />
+              >
               <input
-                type="range"
                 v-model="card.xPercent"
+                type="range"
                 :min="rangeMin"
                 :max="rangeMax"
                 :step="rangeStep"
-              />
+              >
             </div>
             <div class="card-input">
               <input
+                v-model="card.yPercent"
                 type="number"
-                v-model="card.yPercent"
                 :min="rangeMin"
                 :max="rangeMax"
                 :step="rangeStep"
-              />
+              >
               <input
-                type="range"
                 v-model="card.yPercent"
+                type="range"
                 :min="rangeMin"
                 :max="rangeMax"
                 :step="rangeStep"
-              />
+              >
             </div>
             <button class="card-remove" @click="removePosition(cardIndex)">
               X
@@ -259,16 +308,26 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-    <div class="label noprint">JSON</div>
+    <div class="label noprint">
+      JSON
+    </div>
     <textarea
-      name="json-list"
       id="json-list"
+      v-model="positionListString"
+      name="json-list"
       cols="30"
       rows="10"
       class="noprint"
       style="width: 100%"
-      >{{ positionList }}</textarea
-    >
+    />
+    <CustomDialog ref="dialog" :is-confirm-auto-close="false" @confirm="confirmNewPostionList">
+      <textarea
+        id="newPostionList" v-model="newPostionListString"
+        name="newPostionList"
+        cols="30" rows="10" class="noprint"
+        style="width: 100%"
+      />
+    </CustomDialog>
   </div>
 </template>
 
