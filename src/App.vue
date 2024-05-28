@@ -2,18 +2,22 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import CustomDialog from './components/CustomDialog.vue'
 
-interface PositionList {
+interface Position {
   no: string | number
   name: string
   xPercent: string
   yPercent: string
 }
 
+type PositionList = Position[]
+
+type JoyString = 'left' | 'top' | 'down' | 'right'
+
 // State
 const imageUploadRef = ref<HTMLInputElement | null>(null)
 const selectedImage = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
-const positionList = ref<PositionList[]>([])
+const positionList = ref<PositionList>([])
 const newPostionListString = ref<string>()
 const positionListString = computed(() => JSON.stringify(positionList.value, null, 2))
 const currentPosition = reactive({ x: '0', y: '0' })
@@ -69,9 +73,9 @@ function showDialog(): void {
 
 function confirmNewPostionList(): void {
   if (!newPostionListString.value) { /* empty */ }
-  const newPostionListJson: PositionList[] = JSON.parse(newPostionListString.value || '')
+  const newPostionListJson: PositionList = JSON.parse(newPostionListString.value || '')
   if (Array.isArray(newPostionListJson)) {
-    const template: PositionList[] = []
+    const template: PositionList = []
     newPostionListJson.forEach((pos) => {
       template.push({
         no: pos?.no || '',
@@ -86,6 +90,28 @@ function confirmNewPostionList(): void {
   if (dialog.value) {
     dialog.value.close()
   }
+}
+
+const joyClickInterval = ref<number | null>(null)
+const joyHoldDuration = 200
+function movePostionJoy(key: JoyString, currentPos: Position): void {
+  switch (key) {
+    case 'left':
+      currentPos.xPercent = `${Number(currentPos.xPercent) - rangeStep}`
+      break
+    case 'top':
+      currentPos.yPercent = `${Number(currentPos.yPercent) - rangeStep}`
+      break
+    case 'down':
+      currentPos.yPercent = `${Number(currentPos.yPercent) + rangeStep}`
+      break
+    case 'right':
+      currentPos.xPercent = `${Number(currentPos.xPercent) + rangeStep}`
+  }
+}
+
+function clearHoldJoy() {
+  joyClickInterval.value && clearTimeout(joyClickInterval.value)
 }
 function reset(): void {
   selectedImage.value = null
@@ -210,17 +236,17 @@ onUnmounted(() => {
           @change="uploadChange"
         >
       </div>
-      <button v-if="selectedImage" class="reset-btn" @click="reset">
-        reset
+      <button v-if="selectedImage" class="button reset-btn" @click="reset">
+        RESET
       </button>
       <div v-if="positionList.length > 0" class="reset-label-btn">
-        <button @click="resetPositionList">
-          reset label
+        <button class="button" @click="resetPositionList">
+          RESET LABEL
         </button>
       </div>
       <div v-if="selectedImage">
-        <button @click="showDialog">
-          Import Positions
+        <button class="button" @click="showDialog">
+          IMPORT POSITIONS
         </button>
       </div>
     </div>
@@ -255,6 +281,7 @@ onUnmounted(() => {
           <div>Name</div>
           <div>X%</div>
           <div>Y%</div>
+          <div>joypad</div>
           <div />
         </div>
         <div class="card-list">
@@ -301,7 +328,32 @@ onUnmounted(() => {
                 :step="rangeStep"
               >
             </div>
-            <button class="card-remove" @click="removePosition(cardIndex)">
+            <div class="joystick">
+              <button @mousedown="movePostionJoy('left', card)" @mouseup="clearHoldJoy" @mouseout="clearHoldJoy">
+                <svg name="arrow-left" role="button" style="transform: rotate(270deg);" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19" />
+                </svg>
+              </button>
+              <div class="middle">
+                <button @mousedown="movePostionJoy('top', card)" @mouseup="clearHoldJoy" @mouseout="clearHoldJoy">
+                  <svg name="arrow-top" role="button" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19" />
+                  </svg>
+                </button>
+                <div class="ball" />
+                <button @mousedown="movePostionJoy('down', card)" @mouseup="clearHoldJoy" @mouseout="clearHoldJoy">
+                  <svg name="arrow-down" role="button" style="transform: rotate(180deg);" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19" />
+                  </svg>
+                </button>
+              </div>
+              <button @mousedown="movePostionJoy('right', card)" @mouseup="clearHoldJoy" @mouseout="clearHoldJoy">
+                <svg name="arrow-right" role="button" style="transform: rotate(90deg);" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19" />
+                </svg>
+              </button>
+            </div>
+            <button class="card-remove button" @click="removePosition(cardIndex)">
               X
             </button>
           </div>
@@ -399,9 +451,10 @@ onUnmounted(() => {
 .card-wrapper {
   --w-col1: 60px;
   --w-col2: 1fr;
-  --w-col3: 120px;
-  --w-col4: 120px;
+  --w-col3: 60px;
+  --w-col4: 60px;
   --w-col5: 60px;
+  --w-col6: 60px;
   --w-max-width: 100%;
   --row-gap: 0.5rem;
   color: #fff;
@@ -409,8 +462,7 @@ onUnmounted(() => {
   & .card-header {
     display: grid;
     grid-template-columns:
-      var(--w-col1) var(--w-col2) var(--w-col3) var(--w-col4)
-      var(--w-col5);
+      var(--w-col1) var(--w-col2) var(--w-col3) var(--w-col4) var(--w-col5) var(--w-col6);
     grid-template-rows: 1fr;
     justify-content: center;
     text-align: center;
@@ -445,7 +497,7 @@ onUnmounted(() => {
       display: grid;
       grid-template-columns:
         var(--w-col1) var(--w-col2) var(--w-col3) var(--w-col4)
-        var(--w-col5);
+        var(--w-col5) var(--w-col6);
       grid-template-rows: 1fr;
       gap: var(--row-gap);
       justify-content: center;
@@ -467,6 +519,31 @@ onUnmounted(() => {
       width: 40px;
       cursor: pointer;
     }
+  }
+}
+
+.joystick {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  align-items: center;
+  align-self: center;
+  justify-items: center;
+  & svg {
+    cursor: pointer;
+    transition: all 0.3s;
+    &:hover {
+      color: red;
+    }
+  }
+  & .middle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  & .ball {
+    height: 8px; width: 8px; background-color: #fff; border-radius: 50%;
   }
 }
 
