@@ -232,7 +232,7 @@ onUnmounted(() => {
           type="file"
           name="image_uploads"
           class="input-upload"
-          accept=".jpg, .jpeg, .png"
+          accept="image/*"
           @change="uploadChange"
         >
       </div>
