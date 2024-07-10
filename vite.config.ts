@@ -1,11 +1,15 @@
-import { defineConfig } from 'vite'
+import process from 'node:process'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [vue()],
-  base: '/find-point-a4-coordinate-system-percent',
-  server: {
-    port: 5454,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    plugins: [vue()],
+    base: env.BASE_URL,
+    server: {
+      port: 5454,
+    },
+  }
 })

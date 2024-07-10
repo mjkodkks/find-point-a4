@@ -9,6 +9,7 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "types": ["node"],
     "allowImportingTsExtensions": true,
 
     /* Linting */
