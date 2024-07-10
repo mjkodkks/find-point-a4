@@ -150,6 +150,13 @@ function calculatePercentFromEvent(
   return { xPercent, yPercent }
 }
 
+function copyPosition(text: string) {
+  if (!text) { /* empty */ }
+  if (!navigator.clipboard) { /* not supported */ }
+  navigator.clipboard.writeText(text)
+  alert('copy success!')
+}
+
 const onMouseMoveDebounce = debounce(onMouseMove, 100)
 
 function onMouseMove(evt: MouseEvent): void {
@@ -170,8 +177,13 @@ function onMouseOver(): void {
 }
 
 function onMouseDown(evt: MouseEvent): void {
+  evt.preventDefault()
   if (!pageRef.value || !selectedImage.value)
     return
+
+  if (evt.button === 2) {
+    return
+  }
 
   const posName = prompt('Please enter the position name, or leave blank')
   const { xPercent, yPercent } = calculatePercentFromEvent(evt) || {
@@ -193,6 +205,10 @@ function onMouseOut(evt: MouseEvent): void {
   showTooltip.value = false
 }
 
+// function onContextmenu() {
+
+// }
+
 function calculateTooltipPosition(evt: MouseEvent): { x: number, y: number } {
   if (!pageRef.value || !selectedImage.value)
     return { x: 0, y: 0 }
@@ -211,11 +227,15 @@ function windowsMouseMove(evt: MouseEvent): void {
 }
 
 onMounted(() => {
-  document.addEventListener('mousemove', windowsMouseMove)
+  if (pageRef?.value) {
+    pageRef.value.addEventListener('mousemove', windowsMouseMove)
+  }
 })
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', windowsMouseMove)
+  if (pageRef?.value) {
+    pageRef.value.removeEventListener('mousemove', windowsMouseMove)
+  }
 })
 </script>
 
@@ -259,6 +279,7 @@ onUnmounted(() => {
         @mousedown="onMouseDown"
         @mouseout="onMouseOut"
         @mouseover="onMouseOver"
+        @contextmenu.prevent
       >
         <div
           v-for="pos in positionList"
@@ -360,8 +381,14 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-    <div class="label noprint">
-      JSON
+    <div class="label-wrapper">
+      <div class="label noprint">
+        <div>JSON</div>
+      </div>
+      <button class="button icon" @click="copyPosition(positionListString)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M3 3a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H5v12a1 1 0 1 1-2 0zm4 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z" clip-rule="evenodd" /></svg>
+        Copy
+      </button>
     </div>
     <textarea
       id="json-list"
@@ -394,6 +421,11 @@ onUnmounted(() => {
   text-align: center;
 }
 
+.label-wrapper {
+  display: flex;
+  gap: 1rem;
+}
+
 .label {
   width: fit-content;
   background-color: black;
@@ -402,6 +434,10 @@ onUnmounted(() => {
   font-size: 1.25rem;
   font-weight: 600;
   border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.btn-copy {
+
 }
 
 .fileupload-wrapper {
