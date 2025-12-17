@@ -126,14 +126,13 @@ body {
 .page.a4 {
   background: white;
   display: block;
-  width: 21cm;
-  height: 29.7cm;
+  width: 210mm;
+  height: 297mm;
   margin: 0 auto;
   margin-bottom: 0.5cm;
   box-shadow: 0 0 0.1cm rgba(0, 0, 0, 0.5);
   border: 1px solid #000;
   position: relative;
-  cursor: pointer;
 }
 
 @page {
