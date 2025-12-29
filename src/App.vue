@@ -332,7 +332,7 @@ onUnmounted(() => {
 <template>
   <div class="app">
     <h1 class="title noprint">
-      A4 Document Position Editor.
+      <span>A4</span> Document Position Editor.
     </h1>
     <div class="noprint">
       <ol>
@@ -402,7 +402,7 @@ onUnmounted(() => {
           <div>Name</div>
           <div>X(mm)</div>
           <div>Y(mm)</div>
-          <div>joypad</div>
+          <div>Joypad</div>
           <div />
         </div>
         <div class="card-list">
@@ -610,6 +610,11 @@ onUnmounted(() => {
 .title {
   text-align: center;
   margin-top: 1rem;
+
+  & span {
+    font-weight: bold;
+    color: var(--primary-color);
+  }
 }
 
 .label-wrapper {
@@ -626,6 +631,7 @@ onUnmounted(() => {
   font-weight: 600;
   border-radius: 0.5rem 0.5rem 0 0;
   align-content: center;
+  height: 32px;
 }
 
 .btn-copy {
@@ -657,6 +663,9 @@ onUnmounted(() => {
   justify-content: center;
   min-height: 1.25rem;
   align-items: center;
+  border: solid 1px;
+  margin: 1rem auto;
+  border-style: dashed;
 }
 
 .reset-label-btn {
@@ -685,7 +694,6 @@ onUnmounted(() => {
   --w-col6: 60px;
   --w-max-width: 100%;
   --row-gap: 0.5rem;
-  color: #fff;
   padding-right: 0.5rem;
 
   & .card-header {
@@ -696,12 +704,13 @@ onUnmounted(() => {
     grid-template-rows: 1fr;
     justify-content: center;
     text-align: center;
-    background: black;
-    color: white;
+    background: var(--primary-color);
     font-size: 1rem;
     height: 40px;
     max-width: var(--w-max-width);
     gap: var(--row-gap);
+    color: white;
+    text-transform: capitalize;
 
     & div {
       display: flex;
@@ -719,10 +728,11 @@ onUnmounted(() => {
     resize: vertical;
     padding: 0.5rem 0;
     max-width: var(--w-max-width);
-    background: rgb(44, 44, 44);
+    background: #c6c9ff;
     height: 60dvh;
     width: var(--w-max-width);
-    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+    border-radius: 0 0 0.5rem 0.5rem;
+    /* box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5); */
 
     & .card {
       min-height: var(--height);

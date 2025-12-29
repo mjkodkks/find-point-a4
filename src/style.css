@@ -8,6 +8,14 @@
   background-color: #fff;
 
   font-synthesis: none;
+  --primary-color: #3b82f6; /* สีฟ้าโมเดิร์น */
+  --bg-color: #f8fafc;     /* พื้นหลังเทาอ่อนมาก */
+  --surface-color: #ffffff;
+  --text-main: #1e293b;
+  --text-sub: #64748b;
+  --border-color: #e2e8f0;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --radius: 12px;
 }
 
 /*
@@ -27,6 +35,7 @@ body {
   font-family: var(--font-family);
   text-rendering: optimizeLegibility;
   font-weight: var(--font-weight);
+  background-color: var(--bg-color);
 }
 img, picture, video, canvas, svg {
   display: block;
@@ -58,21 +67,19 @@ button {
 /* CSS */
 .button {
   appearance: none;
-  background-color: #FAFBFC;
+  background-color: var(--primary-color);
   border: 1px solid rgba(27, 31, 35, 0.15);
   border-radius: 6px;
   box-shadow: rgba(27, 31, 35, 0.04) 0 1px 0, rgba(255, 255, 255, 0.25) 0 1px 0 inset;
   box-sizing: border-box;
-  color: #24292E;
+  color: white;
   cursor: pointer;
-  display: inline-block;
   font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  font-size: 14px;
+  font-size: 12px;
   text-transform: capitalize;
-  font-weight: 500;
   line-height: 20px;
   list-style: none;
-  padding: 6px 16px;
+  padding: 0 8px;
   position: relative;
   transition: background-color 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   user-select: none;
@@ -81,6 +88,10 @@ button {
   vertical-align: middle;
   white-space: nowrap;
   word-wrap: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
 }
 
 .button.icon {
@@ -90,7 +101,6 @@ button {
 }
 
 .button:hover {
-  background-color: #F3F4F6;
   text-decoration: none;
   transition-duration: 0.1s;
 }
@@ -103,7 +113,6 @@ button {
 }
 
 .button:active {
-  background-color: #EDEFF2;
   box-shadow: rgba(225, 228, 232, 0.2) 0 1px 0 inset;
   transition: none 0s;
 }
@@ -132,8 +141,9 @@ body {
   margin: 0 auto;
   margin-bottom: 0.5cm;
   box-shadow: 0 0 0.1cm rgba(0, 0, 0, 0.5);
-  border: 1px solid #000;
+  border: 1px solid #959595;
   position: relative;
+  border-radius: 4px;
 }
 
 @page {
