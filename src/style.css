@@ -1,16 +1,13 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --line-height: 1.5;
+  --font-weight: 400;
 
-  color-scheme: light dark;
+  --color-scheme: light dark;
   --font-color: #000;
   background-color: #fff;
 
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /*
@@ -24,8 +21,12 @@
   margin: 0;
 }
 body {
-  line-height: 1.5;
+  line-height: var(--line-height);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-family);
+  text-rendering: optimizeLegibility;
+  font-weight: var(--font-weight);
 }
 img, picture, video, canvas, svg {
   display: block;
@@ -149,7 +150,7 @@ body {
     print-color-adjust: exact !important;
     /* background: none !important; */
   }
-  main {
+  .main {
     padding: 0 !important;
     margin: 0 !important;
   }

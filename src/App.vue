@@ -334,7 +334,7 @@ onUnmounted(() => {
     <h1 class="title noprint">
       A4 Document Position Editor.
     </h1>
-    <div>
+    <div class="noprint">
       <ol>
         <li>Upload A4 image (.png, .jpg).</li>
         <li>Upload Position or create new by click on image.</li>
@@ -543,8 +543,8 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-    <div class="label-wrapper">
-      <div class="label noprint">
+    <div class="label-wrapper noprint">
+      <div class="label">
         <div>JSON</div>
       </div>
       <button
@@ -609,6 +609,7 @@ onUnmounted(() => {
 
 .title {
   text-align: center;
+  margin-top: 1rem;
 }
 
 .label-wrapper {
