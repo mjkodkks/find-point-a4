@@ -36,6 +36,8 @@ const rangeStep = 0.5
 const a4WidthMm = 210
 const a4HeightMm = 297
 
+const fontSize = ref(12)
+
 // Computed
 const styleComputed = computed(() => ({
   background: previewUrl.value ? `url(${previewUrl.value}) no-repeat` : '#fff',
@@ -47,6 +49,22 @@ const tooltipPositionStyle = computed(() => ({
 }))
 
 // Methods
+function examplePositionList(): void {
+  newPostionListString.value = `[
+  {
+    "no": 1,
+    "name": "Point A",
+    "xMM": "5",
+    "yMM": "5"
+  },
+  {
+    "no": 2,
+    "name": "Point B",
+    "xMM": "10",
+    "yMM": "10"
+  }
+]`
+}
 function uploadChange(evt: Event): void {
   const el = evt.target as HTMLInputElement | null
   const file = el?.files ? el.files[0] : null
@@ -75,6 +93,7 @@ const dialog = ref<InstanceType<typeof CustomDialog>>()
 
 function showDialog(): void {
   if (dialog.value) {
+    examplePositionList()
     dialog.value.showDialog()
   }
 }
@@ -126,6 +145,8 @@ function clearHoldJoy() {
   joyClickInterval.value && clearTimeout(joyClickInterval.value)
 }
 function reset(): void {
+  if (!confirm('Are you sure to reset all?'))
+    return
   selectedImage.value = null
   previewUrl.value = null
   if (imageUploadRef.value) {
@@ -374,7 +395,7 @@ onUnmounted(() => {
           v-for="pos in positionList"
           :key="pos.no"
           class="point"
-          :style="{ left: `${pos.xMM}mm`, top: `${pos.yMM}mm` }"
+          :style="{ left: `${pos.xMM}mm`, top: `${pos.yMM}mm`, fontSize: `${fontSize}px` }"
           :class="[isDraggingPoint && draggingPosition?.no === pos.no ? 'is-draging' : '']"
           :title="`(${pos.xMM}mm, ${pos.yMM}mm)`"
           @mousedown="onMouseDownPoint($event, pos)"
@@ -541,6 +562,33 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+        <div class="noprint">
+          <div class="font-resize-wrapper">
+            <div>
+              Font Size (px):
+            </div>
+            <div class="font-resize-input">
+              <input
+                v-model="fontSize"
+                type="number"
+                :min="0"
+                :max="100"
+                :step="1"
+              >
+              <input
+                v-model="fontSize"
+                type="range"
+                :min="0"
+                :max="100"
+                :step="1"
+              >
+            </div>
+            <button class="button" @click="fontSize = 12">
+              <!-- svg icon revert -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><path fill="currentColor" fill-rule="evenodd" d="M6.545.998a1 1 0 0 0 0 2h2.728a2.638 2.638 0 0 1 0 5.275H4.817V6.545a1 1 0 0 0-1.707-.707L.384 8.564a1 1 0 0 0-.22 1.09q.073.18.218.327l2.728 2.728a1 1 0 0 0 1.707-.707v-1.729h4.456a4.638 4.638 0 1 0 0-9.275z" clip-rule="evenodd" /></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="label-wrapper noprint">
@@ -582,8 +630,17 @@ onUnmounted(() => {
       :is-confirm-auto-close="false"
       @confirm="confirmNewPostionList"
     >
-      <div class="label noprint">
-        Position list in JSON
+      <div class="label-wrapper">
+        <div class="label noprint">
+          Position list in JSON
+        </div>
+        <button
+          type="button"
+          class="button icon noprint"
+          @click="examplePositionList"
+        >
+          Example JSON
+        </button>
       </div>
       <textarea
         id="newPostionList"
@@ -593,6 +650,13 @@ onUnmounted(() => {
         rows="20"
         class="noprint"
         style="width: 100%"
+        placeholder="
+        Example: [{
+          no: 1,
+          name: 'Point A',
+          xMM: '10.5',
+          yMM: '20.5'
+        }]"
       />
     </CustomDialog>
   </div>
@@ -675,7 +739,7 @@ onUnmounted(() => {
 .point {
   min-width: 20px;
   padding: 2px;
-  height: 20px;
+  height: auto;
   font-size: 0.75rem;
   text-align: center;
   background: red;
@@ -728,7 +792,7 @@ onUnmounted(() => {
     resize: vertical;
     padding: 0.5rem 0;
     max-width: var(--w-max-width);
-    background: #c6c9ff;
+    background: var(--bg-tool-color);
     height: 60dvh;
     width: var(--w-max-width);
     border-radius: 0 0 0.5rem 0.5rem;
@@ -803,6 +867,22 @@ onUnmounted(() => {
 .is-draging {
   background-color: blue !important;
   cursor: grabbing;
+}
+
+.font-resize-wrapper {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  background: var(--bg-tool-color);
+  padding: 1rem;
+  border-radius: 0.5rem;
+
+  & .font-resize-input {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 }
 
 @media screen and (max-width: 1200px) {
