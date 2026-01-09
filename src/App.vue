@@ -5,8 +5,8 @@ import CustomDialog from './components/CustomDialog.vue'
 interface Position {
   no: string | number
   name: string
-  xMM: string
-  yMM: string
+  xMM: number
+  yMM: number
 }
 
 type PositionList = Position[]
@@ -34,7 +34,7 @@ const positionListString = computed(() => {
   }
   return JSON.stringify(positionList.value, null, 2)
 })
-const currentPosition = reactive({ x: '0', y: '0' })
+const currentPosition = reactive({ x: 0, y: 0 })
 const pageRef = ref<HTMLElement | null>(null)
 const showTooltip = ref(false)
 const tooltipPosition = reactive({ x: 0, y: 0 })
@@ -64,14 +64,14 @@ function examplePositionList(): void {
   {
     "no": 1,
     "name": "Point A",
-    "xMM": "5",
-    "yMM": "5"
+    "xMM": 5,
+    "yMM": 5
   },
   {
     "no": 2,
     "name": "Point B",
-    "xMM": "10",
-    "yMM": "10"
+    "xMM": 10,
+    "yMM": 10
   }
 ]`
 }
@@ -157,8 +157,8 @@ function confirmNewPostionList(): void {
       template.push({
         no: pos?.no || '',
         name: pos?.name || '',
-        xMM: pos?.xMM || '',
-        yMM: pos?.yMM || '',
+        xMM: +pos?.xMM || 0,
+        yMM: +pos?.yMM || 0,
       })
     })
     positionList.value = template
@@ -174,16 +174,16 @@ const joyClickInterval = ref<number | null>(null)
 function movePostionJoy(key: JoyString, currentPos: Position): void {
   switch (key) {
     case 'left':
-      currentPos.xMM = `${Number(currentPos.xMM) - rangeStep}`
+      currentPos.xMM = currentPos.xMM - rangeStep
       break
     case 'top':
-      currentPos.yMM = `${Number(currentPos.yMM) - rangeStep}`
+      currentPos.yMM = currentPos.yMM - rangeStep
       break
     case 'down':
-      currentPos.yMM = `${Number(currentPos.yMM) + rangeStep}`
+      currentPos.yMM = currentPos.yMM + rangeStep
       break
     case 'right':
-      currentPos.xMM = `${Number(currentPos.xMM) + rangeStep}`
+      currentPos.xMM = currentPos.xMM + rangeStep
   }
 }
 
@@ -220,7 +220,7 @@ function removePosition(posIndex: number): void {
 
 function calculatePositionFromEvent(
   evt: MouseEvent,
-): { xMM: string, yMM: string } | undefined {
+): { xMM: number, yMM: number } | undefined {
   if (!pageRef.value || !selectedImage.value)
     return
   const pageWidth = pageRef.value.clientWidth
@@ -232,8 +232,8 @@ function calculatePositionFromEvent(
   const fixedDecimal = 2
   // const xPercent = ((offsetX / pageWidth) * 100).toFixed(fixedDecimal)
   // const yPercent = ((offsetY / pageHeight) * 100).toFixed(fixedDecimal)
-  const xMM = ((offsetX / pageWidth) * a4WidthMm).toFixed(fixedDecimal)
-  const yMM = ((offsetY / pageHeight) * a4HeightMm).toFixed(fixedDecimal)
+  const xMM = +((offsetX / pageWidth) * a4WidthMm).toFixed(fixedDecimal)
+  const yMM = +((offsetY / pageHeight) * a4HeightMm).toFixed(fixedDecimal)
   return { xMM, yMM }
 }
 
@@ -254,8 +254,8 @@ function onMouseMove(evt: MouseEvent): void {
   if (!pageRef.value || !selectedImage.value)
     return
   const { xMM, yMM } = calculatePositionFromEvent(evt) || {
-    xMM: '0',
-    yMM: '0',
+    xMM: 0,
+    yMM: 0,
   }
   currentPosition.x = xMM
   currentPosition.y = yMM
@@ -281,8 +281,8 @@ function onMouseDown(evt: MouseEvent): void {
     return
   }
   const { xMM, yMM } = calculatePositionFromEvent(evt) || {
-    xMM: '0',
-    yMM: '0',
+    xMM: 0,
+    yMM: 0,
   }
   positionList.value.push({
     no: positionList.value.length + 1,
@@ -345,14 +345,14 @@ function onGlobalMouseMove(evt: MouseEvent): void {
     return
 
   evt.preventDefault()
-  const { xMM, yMM } = calculatePositionBoxFromEvent(evt) || { xMM: '0', yMM: '0' }
+  const { xMM, yMM } = calculatePositionBoxFromEvent(evt) || { xMM: 0, yMM: 0 }
   draggingPosition.value.xMM = xMM
   draggingPosition.value.yMM = yMM
 }
 
 function calculatePositionBoxFromEvent(
   evt: MouseEvent,
-): { xMM: string, yMM: string } | undefined {
+): { xMM: number, yMM: number } | undefined {
   if (!pageRef.value || !selectedImage.value)
     return
   const pageWidth = pageRef.value.clientWidth
@@ -365,8 +365,8 @@ function calculatePositionBoxFromEvent(
   const fixedDecimal = 2
   // const xPercent = ((offsetX / pageWidth) * 100).toFixed(fixedDecimal)
   // const yPercent = ((offsetY / pageHeight) * 100).toFixed(fixedDecimal)
-  const xMM = ((offsetX / pageWidth) * a4WidthMm).toFixed(fixedDecimal)
-  const yMM = ((offsetY / pageHeight) * a4HeightMm).toFixed(fixedDecimal)
+  const xMM = +((offsetX / pageWidth) * a4WidthMm).toFixed(fixedDecimal)
+  const yMM = +((offsetY / pageHeight) * a4HeightMm).toFixed(fixedDecimal)
   console.log(`Position: ${xMM}mm, ${yMM}mm`)
   return { xMM, yMM }
 }
@@ -724,8 +724,8 @@ onUnmounted(() => {
         Example: [{
           no: 1,
           name: 'Point A',
-          xMM: '10.5',
-          yMM: '20.5'
+          xMM: 10.5,
+          yMM: 20.5
         }]"
       />
     </CustomDialog>
