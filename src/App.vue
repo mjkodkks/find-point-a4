@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, toRaw } from 'vue'
 import CustomDialog from './components/CustomDialog.vue'
 
 interface Position {
@@ -27,6 +27,7 @@ const previewUrl = ref<string | null>(null)
 const previewUrlList = ref<PreviewImage[]>([])
 const selectedPreviewImage = ref<PreviewImage | null>(null)
 const positionList = ref<PositionList>([])
+const positionListBackup = ref<PositionList>([])
 const newPostionListString = ref<string>()
 const positionListString = computed(() => {
   if (!positionList.value || positionList.value.length === 0) {
@@ -47,6 +48,7 @@ const a4HeightMm = 297
 
 const fontSize = ref(12)
 const isNoBackgroundPrint = ref(false)
+const isShowPreviousPosition = ref(true)
 
 // Computed
 const styleComputed = computed(() => ({
@@ -164,6 +166,7 @@ function confirmNewPostionList(): void {
     positionList.value = template
   }
   newPostionListString.value = ''
+  positionListBackup.value = structuredClone(toRaw(positionList.value))
   if (dialog.value) {
     dialog.value.close()
   }
@@ -202,6 +205,7 @@ function reset(): void {
     imageUploadRef.value.value = ''
   }
   positionList.value = []
+  positionListBackup.value = []
   showTooltip.value = false
   newPostionListString.value = ''
 }
@@ -457,6 +461,16 @@ onUnmounted(() => {
         @mouseover="onMouseOver"
         @contextmenu.prevent
       >
+        <template v-if="isShowPreviousPosition">
+          <div
+            v-for="pos in positionListBackup"
+            :key="pos.no"
+            class="point backup noprint"
+            :style="{ left: `${pos.xMM}mm`, top: `${pos.yMM}mm`, fontSize: `${fontSize}px` }"
+          >
+            {{ pos.no }}) {{ pos?.name }}
+          </div>
+        </template>
         <div
           v-for="pos in positionList"
           :key="pos.no"
@@ -466,7 +480,7 @@ onUnmounted(() => {
           :title="`(${pos.xMM}mm, ${pos.yMM}mm)`"
           @mousedown="onMouseDownPoint($event, pos)"
         >
-          {{ pos.no }} {{ pos?.name }}
+          {{ pos.no }}) {{ pos?.name }}
         </div>
       </div>
       <div v-show="showTooltip" class="tooltip" :style="tooltipPositionStyle">
@@ -654,9 +668,15 @@ onUnmounted(() => {
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><path fill="currentColor" fill-rule="evenodd" d="M6.545.998a1 1 0 0 0 0 2h2.728a2.638 2.638 0 0 1 0 5.275H4.817V6.545a1 1 0 0 0-1.707-.707L.384 8.564a1 1 0 0 0-.22 1.09q.073.18.218.327l2.728 2.728a1 1 0 0 0 1.707-.707v-1.729h4.456a4.638 4.638 0 1 0 0-9.275z" clip-rule="evenodd" /></svg>
             </button>
           </div>
-          <div class="print-no-background card-config-wrapper">
-            <input id="no-background-checkbox" v-model="isNoBackgroundPrint" type="checkbox" name="no-background-checkbox">
-            <label for="no-background-checkbox">Print without background</label>
+          <div class=" card-config-wrapper">
+            <div class="checkbox-config-wrapper">
+              <input id="no-background-checkbox" v-model="isNoBackgroundPrint" type="checkbox" name="no-background-checkbox">
+              <label for="no-background-checkbox">Print without background</label>
+            </div>
+            <div class="checkbox-config-wrapper">
+              <input id="show-previous-position-checkbox" v-model="isShowPreviousPosition" type="checkbox" name="no-background-checkbox">
+              <label for="show-previous-position-checkbox">Show Previous Postion</label>
+            </div>
           </div>
         </div>
       </div>
@@ -783,6 +803,7 @@ onUnmounted(() => {
   left: 0;
   top: 0;
   transition: all 0.2s;
+  z-index: 2;
 }
 
 .fileupload-wrapper {
@@ -861,6 +882,14 @@ onUnmounted(() => {
   color: #fff;
   border-radius: 0.2rem;
   cursor: grab;
+  z-index: 1;
+}
+
+.point.backup {
+  background: #e4e4e4a3;
+  z-index: 0;
+  color: #7e7e7e;
+    cursor: auto;
 }
 
 .card-wrapper {
@@ -1008,6 +1037,18 @@ onUnmounted(() => {
   align-items: center;
 
   & input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
+.checkbox-config-wrapper {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+    & input[type="checkbox"] {
     width: 16px;
     height: 16px;
     cursor: pointer;
