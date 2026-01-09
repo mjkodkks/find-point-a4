@@ -46,6 +46,7 @@ const a4WidthMm = 210
 const a4HeightMm = 297
 
 const fontSize = ref(12)
+const isNoBackgroundPrint = ref(false)
 
 // Computed
 const styleComputed = computed(() => ({
@@ -448,6 +449,7 @@ onUnmounted(() => {
       <div
         ref="pageRef"
         class="page a4"
+        :class="[isNoBackgroundPrint ? 'no-print-background' : '']"
         :style="styleComputed"
         @mousemove="onMouseMoveDebounce"
         @mousedown="onMouseDown"
@@ -627,7 +629,7 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="noprint">
-          <div class="font-resize-wrapper">
+          <div class="font-resize-wrapper card-config-wrapper">
             <div>
               Font Size (px):
             </div>
@@ -651,6 +653,10 @@ onUnmounted(() => {
               <!-- svg icon revert -->
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><path fill="currentColor" fill-rule="evenodd" d="M6.545.998a1 1 0 0 0 0 2h2.728a2.638 2.638 0 0 1 0 5.275H4.817V6.545a1 1 0 0 0-1.707-.707L.384 8.564a1 1 0 0 0-.22 1.09q.073.18.218.327l2.728 2.728a1 1 0 0 0 1.707-.707v-1.729h4.456a4.638 4.638 0 1 0 0-9.275z" clip-rule="evenodd" /></svg>
             </button>
+          </div>
+          <div class="print-no-background card-config-wrapper">
+            <input id="no-background-checkbox" v-model="isNoBackgroundPrint" type="checkbox" name="no-background-checkbox">
+            <label for="no-background-checkbox">Print without background</label>
           </div>
         </div>
       </div>
@@ -977,19 +983,34 @@ onUnmounted(() => {
   cursor: grabbing;
 }
 
-.font-resize-wrapper {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+.card-config-wrapper {
   margin-top: 1rem;
   background: var(--bg-tool-color);
   padding: 1rem;
   border-radius: 0.5rem;
+}
+
+.font-resize-wrapper {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 
   & .font-resize-input {
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+}
+
+.print-no-background {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  & input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
   }
 }
 

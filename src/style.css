@@ -165,6 +165,9 @@ body {
     print-color-adjust: exact !important;
     /* background: none !important; */
   }
+  .page.a4.no-print-background {
+    background: none !important;
+  }
   .main {
     padding: 0 !important;
     margin: 0 !important;
