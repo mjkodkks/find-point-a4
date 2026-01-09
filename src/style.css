@@ -130,6 +130,10 @@ button {
   display: none;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 body {
   color: var(--font-color);
 }

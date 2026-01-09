@@ -13,10 +13,19 @@ type PositionList = Position[]
 
 type JoyString = 'left' | 'top' | 'down' | 'right'
 
+interface PreviewImage {
+  id: number
+  name: string
+  url: string
+}
+
 // State
 const imageUploadRef = ref<HTMLInputElement | null>(null)
 const selectedImage = ref<File | null>(null)
+const imageList = ref<File[]>([])
 const previewUrl = ref<string | null>(null)
+const previewUrlList = ref<PreviewImage[]>([])
+const selectedPreviewImage = ref<PreviewImage | null>(null)
 const positionList = ref<PositionList>([])
 const newPostionListString = ref<string>()
 const positionListString = computed(() => {
@@ -65,17 +74,53 @@ function examplePositionList(): void {
   }
 ]`
 }
-function uploadChange(evt: Event): void {
+async function uploadChange(evt: Event): void {
   const el = evt.target as HTMLInputElement | null
-  const file = el?.files ? el.files[0] : null
-  if (!file)
+  const files = el?.files
+
+  if (!files || files.length === 0) {
     return
-  selectedImage.value = file
-  const reader = new FileReader()
-  reader.addEventListener('load', () => {
-    previewUrl.value = reader.result as string
-  })
-  reader.readAsDataURL(file)
+  }
+
+  const fileReaderPromises: Promise<PreviewImage>[] = []
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const currentIndex = imageList.value.length + i
+    imageList.value.push(file)
+
+    const promise = new Promise<PreviewImage>((resolve) => {
+      const reader = new FileReader()
+      reader.addEventListener('load', (e) => {
+        resolve({
+          id: currentIndex,
+          name: file.name,
+          url: e.target?.result as string,
+        })
+      })
+      reader.readAsDataURL(file)
+    })
+
+    fileReaderPromises.push(promise)
+  }
+
+  const results = await Promise.all(fileReaderPromises)
+  previewUrlList.value.push(...results)
+
+  // Auto-select first image if nothing is selected
+  if (!selectedPreviewImage.value && previewUrlList.value.length > 0) {
+    selectedImage.value = imageList.value.at(0) || null
+    selectedPreviewImage.value = previewUrlList.value.at(0) || null
+    previewUrl.value = previewUrlList.value.at(0)?.url || null
+  }
+}
+
+function selectPreview(id: number) {
+  const selected = previewUrlList.value.find(img => img.id === id)
+  if (selected) {
+    selectedPreviewImage.value = selected
+    previewUrl.value = selected.url
+  }
 }
 
 function debounce<T extends (...args: any[]) => void>(
@@ -149,6 +194,9 @@ function reset(): void {
     return
   selectedImage.value = null
   previewUrl.value = null
+  selectedPreviewImage.value = null
+  imageList.value = []
+  previewUrlList.value = []
   if (imageUploadRef.value) {
     imageUploadRef.value.value = ''
   }
@@ -373,12 +421,28 @@ onUnmounted(() => {
           name="image_uploads"
           class="input-upload"
           accept="image/*"
+          multiple
           @change="uploadChange"
         >
+        <button v-if="selectedImage" class="button reset-btn" @click="reset">
+          RESET
+        </button>
       </div>
-      <button v-if="selectedImage" class="button reset-btn" @click="reset">
-        RESET
-      </button>
+      <div v-if="previewUrlList.length > 0" class="image-upload-card-wrapper noprint">
+        <div v-for="(image) in previewUrlList" :key="image.id" class="image-upload-card">
+          <div class="file-name-card" :title="image.name">
+            {{ image.name }}
+          </div>
+          <img
+            :key="`preview_${image.id}`"
+            :title="image.name" :src="image.url"
+            :alt="`preview_${image.id}`" style="max-height: 150px;"
+            class="cursor-pointer"
+            :class="[selectedPreviewImage?.id === image.id ? 'selected' : '']"
+            @click="selectPreview(image.id)"
+          >
+        </div>
+      </div>
     </div>
     <div class="main">
       <div
@@ -701,12 +765,6 @@ onUnmounted(() => {
 .btn-copy {
 }
 
-.fileupload-wrapper {
-  display: flex;
-  justify-content: center;
-  margin: 1rem;
-}
-
 .tooltip {
   width: 160px;
   background-color: #000000a6;
@@ -721,6 +779,11 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 
+.fileupload-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
 .action-wrapper {
   display: flex;
   gap: 1rem;
@@ -730,6 +793,51 @@ onUnmounted(() => {
   border: solid 1px;
   margin: 1rem auto;
   border-style: dashed;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.image-upload-card-wrapper {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  gap: 16px;
+  padding: 4px;
+  transition: all 0.3s;
+
+  & .image-upload-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+
+  & .file-name-card {
+    font-size: 0.75rem;
+    text-align: center;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & :hover img {
+    transform: scale(1.01);
+    transition: all 0.3s;
+    outline: solid 2px var(--primary-color);
+    border-radius: 4px;
+  }
+
+  & img {
+    outline: solid 0.5px var(--primary-color);
+  }
+
+  & .selected {
+    outline: solid 2px var(--primary-color);
+    border-radius: 0.5rem;
+    transition: all 0.3s;
+    border-radius: 4px;
+  }
 }
 
 .reset-label-btn {
