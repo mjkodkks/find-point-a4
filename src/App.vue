@@ -74,7 +74,7 @@ function examplePositionList(): void {
   }
 ]`
 }
-async function uploadChange(evt: Event): void {
+async function uploadChange(evt: Event) {
   const el = evt.target as HTMLInputElement | null
   const files = el?.files
 
