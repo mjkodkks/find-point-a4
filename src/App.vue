@@ -86,7 +86,7 @@ async function uploadChange(evt: Event) {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    const currentIndex = imageList.value.length + i
+    const currentIndex = imageList.value.length
     imageList.value.push(file)
 
     const promise = new Promise<PreviewImage>((resolve) => {
