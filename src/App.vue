@@ -211,7 +211,9 @@ function reset(): void {
 }
 
 function resetPositionList(): void {
-  positionList.value = []
+  positionList.value = structuredClone(
+    toRaw(positionListBackup.value),
+  )
 }
 
 function removePosition(posIndex: number): void {
